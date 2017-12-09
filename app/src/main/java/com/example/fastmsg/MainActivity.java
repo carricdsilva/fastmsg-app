@@ -9,33 +9,54 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+{
 
     public String user = "CD";
+    public CommunicatorThread commTh = new CommunicatorThread();
+    public WriterThread writeTh = new WriterThread();
+    TextView textView;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        System.out.println("onCreate method called");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        textView = (TextView) findViewById(R.id.textView2);
+
+        // Starting communicator thread
+        commTh.textView = textView;
+        commTh.writeTh = writeTh;
+        commTh.start();
     }
 
     /** Called when the user touches the edit box to send a message */
-    public void removeText(View view) {
+    public void removeText(View view)
+    {
         EditText editText = (EditText) findViewById(R.id.editText);
         editText.setText("");
     }
 
     /** Called when the user taps the Send button */
-    public void sendMessage(View view) {
+    public void sendMessage(View view)
+    {
 
         EditText editText = (EditText) findViewById(R.id.editText);
         String message = editText.getText().toString();
 
         System.out.println(message);
-        message = "\n" + user + " : " + message;
+        message = user + " : " + message;
 
+        //Instruct the sender thread to send the message
+        writeTh.writerLock.lock();
+        writeTh.msgToSend = message;
+        writeTh.writerCond.signalAll();
+        writeTh.writerLock.unlock();
 
-        TextView textView = (TextView) findViewById(R.id.textView2);
+        message = "\n" + message;
+
         textView.append(message);
 
         //finally clear the EditText box once the message is sent and reset focus
